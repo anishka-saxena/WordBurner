@@ -1,9 +1,11 @@
+import os
 import streamlit as st
-from roast import get_roast, get_surprise_roast, get_simple_phonetic
 from gtts import gTTS
 from io import BytesIO
 import requests
 import re
+
+FASTAPI_URL = os.getenv("FASTAPI_URL", "http://localhost:8000")
 
 st.set_page_config(page_title="WordBurner", page_icon="🔥", layout="centered")
 
@@ -85,7 +87,11 @@ for key, default in [
 
 def set_new_word(w, result):
     st.session_state.current_word = w
-    st.session_state.phonetic = get_simple_phonetic(w)
+    try:
+        r = requests.get(f"{FASTAPI_URL}/phonetic/{w}")
+        st.session_state.phonetic = r.text.strip() if r.status_code == 200 and r.text.strip() else None
+    except Exception:
+        st.session_state.phonetic = None
     st.session_state.result = result
     st.session_state.cards = parse_cards(result)
     st.session_state.card_index = 0
@@ -117,7 +123,7 @@ if st.button("Discover! 🚀", use_container_width=True):
         st.session_state.input_value = word_input.strip()
         st.session_state.mode = "discover"
         with st.spinner("Burning your word... 🔥"):
-            result = get_roast(w)
+            result = requests.get(f"{FASTAPI_URL}/roast/{w}").text
         set_new_word(w, result)
 
 # ── Result ────────────────────────────────────────────────
@@ -170,7 +176,10 @@ if st.session_state.show_result and st.session_state.result:
                 used_key = f"{level.lower()}_used"
                 used_words = st.session_state[used_key]
                 with st.spinner("Burning your word... 🔥"):
-                    result = get_surprise_roast(level, used_words)
+                    result = requests.post(
+                        f"{FASTAPI_URL}/surprise/{level}",
+                        json={"used_words": used_words}
+                    ).text
                 extracted = extract_word_from_result(result)
                 w = extracted.lower() if extracted else level.lower()
                 if extracted:

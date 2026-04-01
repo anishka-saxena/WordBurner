@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: streamlit-deployment
+  namespace: wordburner
+  labels:
+    app: streamlit-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: streamlit-api
+  template:
+    metadata:
+      labels:
+        app: streamlit-api
+    spec:
+      containers:
+      - name: streamlit
+        image: anishka2026/wordburner-streamlit:v1
+        ports:
+        - containerPort: 8501
+        env:
+        - name: FASTAPI_URL
+          value: "http://fastapi-svc:8000"
+        resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
