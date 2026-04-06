@@ -1,13 +1,19 @@
+import os
+import redis
 from fastapi import FastAPI
 from fastapi.responses import PlainTextResponse
-from pydantic import BaseModel
 from roast import get_roast, get_surprise_roast, get_simple_phonetic
 
 app = FastAPI()
 
+redis_client = redis.Redis(host=os.getenv("REDIS_HOST", "localhost"), port=6379, decode_responses=True)
 
-class SurpriseRequest(BaseModel):
-    used_words: list[str] = []
+
+def extract_word_from_result(result: str):
+    for line in result.splitlines():
+        if "📌 Word:" in line:
+            return line.split("📌 Word:")[-1].strip().strip("*").strip()
+    return None
 
 
 @app.get("/roast/{word}")
@@ -23,6 +29,10 @@ def phonetic_word(word: str):
 
 
 @app.post("/surprise/{level}")
-def surprise_word(level: str, body: SurpriseRequest):
-    result = get_surprise_roast(level, body.used_words)
+def surprise_word(level: str):
+    used_words = list(redis_client.smembers(f"used_words:{level.lower()}"))
+    result = get_surprise_roast(level, used_words)
+    extracted = extract_word_from_result(result)
+    if extracted:
+        redis_client.sadd(f"used_words:{level.lower()}", extracted.lower())
     return PlainTextResponse(result)

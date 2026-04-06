@@ -178,7 +178,7 @@ if st.session_state.show_result and st.session_state.result:
                 with st.spinner("Burning your word... 🔥"):
                     result = requests.post(
                         f"{FASTAPI_URL}/surprise/{level}",
-                        json={"used_words": used_words}
+                        json={}
                     ).text
                 extracted = extract_word_from_result(result)
                 w = extracted.lower() if extracted else level.lower()

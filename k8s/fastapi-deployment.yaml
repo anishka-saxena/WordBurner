@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: fast-api
-        image: anishka2026/wordburner-fastapi:v1
+        image: anishka2026/wordburner-fastapi:v3
         ports:
         - containerPort: 8000
         env:
@@ -26,6 +26,8 @@ spec:
             secretKeyRef:
               name: wordburner-secret
               key: GROQ_API_KEY
+        - name: REDIS_HOST
+          value: "redis-service"
         resources:
           requests:
             memory: "256Mi"
