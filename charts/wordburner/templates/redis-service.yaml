@@ -4,6 +4,7 @@ metadata:
   name: redis-service
   namespace: wordburner
 spec:
+  clusterIP: None
   selector:
     app: redis
   ports:
