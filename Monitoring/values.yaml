@@ -1,0 +1,41 @@
+# --- Slimmed for a memory-constrained homelab node ---
+
+# Turn OFF the heavy optional pieces for now
+alertmanager:
+  enabled: false          # skip paging for the first pass — add later
+
+# Prometheus — keep less data, cap its resources
+prometheus:
+  prometheusSpec:
+    retention: 2d         # only keep 2 days of metrics (default is 10d = far more RAM/disk)
+    resources:
+      requests:
+        memory: 400Mi
+        cpu: 100m
+      limits:
+        memory: 700Mi     # hard ceiling so it can't balloon and thrash your swap
+        cpu: 500m
+    # small local disk for metrics, on your k3s local-path
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          resources:
+            requests:
+              storage: 2Gi
+
+# Grafana — keep it, but tight
+grafana:
+  resources:
+    requests:
+      memory: 128Mi
+      cpu: 50m
+    limits:
+      memory: 256Mi
+      cpu: 200m
+  adminPassword: admin     # you'll change this at first login
+
+# These node/kube exporters are lightweight and give you the core dashboards — keep them
+nodeExporter:
+  enabled: true
+kubeStateMetrics:
+  enabled: true
